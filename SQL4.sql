@@ -74,6 +74,7 @@ VALUES
 --Make sure to comment all code.
 
 --End of assignment for SQL 4
+--This is a function I created to calculate the age of anyone in the database.
 
 
 Create function dbo.func_GetAge1(@DOB DATE)
@@ -82,8 +83,14 @@ as
 Begin
     Declare @Age tinyint
     
+    --What is happening here is the year from the users DOB is calculated against the current year to find the age.
     Set @Age = DATEDIFF(YEAR, @DOB, GETDATE()) - 
                CASE 
+               --To prevent a problem (such as users birthday on 12/31/2000 and the date being 
+               --checked on 1/1/2026 resulting in the answer 26) we must also check the month and day.
+               --
+               --This function below checks the current month and current day against the users 
+               --month and date in their birthday to ensure the most accurate date is calculated
                    WHEN MONTH(@DOB) > MONTH(GETDATE()) 
                         OR (MONTH(@DOB) = MONTH(GETDATE()) 
                         AND DAY(@DOB) > DAY(GETDATE())) 
@@ -94,11 +101,15 @@ Begin
 END;
 
 
+--Here we are going to create a view to see the customer, DOB, age, and rate amount among other things.
+--We will also be calculating if the rider is present, and if it is, the updated rate
 Create view vw_GetCustomerRate3 
 as
 Select
     C.CustID, C.FName, C.LName, C.DOB, dbo.func_GetAge1(C.DOB) as Age, C.Rider,
     R.BeginAge, R.EndAge, R.RateAmount,
+
+    --Here we will be checking of the rider is a "Y" (or yes) which would mean we need to increase the rate by 1.5
     Case
         When Rider = 'Y' then r.RateAmount + 1.5
         Else RateAmount
@@ -109,6 +120,3 @@ join Rate.dbo.Rate R
 GO
 
 Select * from vw_GetCustomerRate3;
-
-
-
